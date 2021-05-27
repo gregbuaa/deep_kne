@@ -127,8 +127,8 @@ class CNNTrain(nn.Module):
 
         loader.epoch_init(self.batch_size)
         batch = loader.next_batch()
-        losses = []
-        meanloss = []
+        losses = [.01]
+        meanloss = [.01]
 
         index = 0
 
@@ -161,8 +161,8 @@ class CNNTrain(nn.Module):
                 optimizer.step()
 
             if index % 500 == 0:
-                print("[%d/%d] [%d/%d] mean_loss :%0.2f" % (0, 0, index, loader.num_batch, np.mean(losses)))
-                losses = []
+                print("[%d/%d] [%d/%d] mean_loss :%0.2f" % (0, 0, index, loader.num_batch, 0.00 if len(losses)==0 else np.mean(losses)),flush=True)
+                losses = [.01]
 
             index += 1
             batch = loader.next_batch()

@@ -1,6 +1,8 @@
 import sys
 sys.path.append("..")
 
+import time
+
 import random
 from sklearn.metrics import roc_auc_score
 import numpy as np
@@ -29,18 +31,20 @@ def generate_neg_sample_from_community(current_community, max_vertices, communit
     return str((start,end))
 
 
-def prepare_sample(graph, train_ratio = 0.4, community_raito = 0.0):
+def prepare_sample(graph, train_ratio = 0.4, community_ratio = 0.0):
     ### remove a porption of edges from graph to test the link prediction. 
     E = graph['E']
-    community = graph['community']
     E = tranform_key_type(E)
-    community = tranform_key_type(community)
-
     community_set = {}
-    for vertex, value in community.items():
-        if value not in community_set:
-            community_set[value] = []
-        community_set[value].append(vertex)
+    if 'community' not in graph:
+        community_ratio = 0.0
+    else:
+        community = graph['community']
+        community = tranform_key_type(community)
+        for vertex, value in community.items():
+            if value not in community_set:
+                community_set[value] = []
+            community_set[value].append(vertex)
 
     max_vertices = len(graph['V'])
     rEs, newEdges = {}, {}
@@ -60,7 +64,10 @@ def prepare_sample(graph, train_ratio = 0.4, community_raito = 0.0):
                 rEs[value].append(key)
             else:
                 newEdges[str((key, value))] = 1
-                neg_sample = generate_neg_sample_from_community(community_set[community[key]], max_vertices, community_raito)
+                community_info = {}
+                if 'community' in graph:
+                    community_info = community_set[community[key]]
+                neg_sample = generate_neg_sample_from_community(community_info, max_vertices, community_ratio)
                 newEdges[neg_sample] = 0
 
     graph['E'] = rEs
@@ -89,7 +96,7 @@ def evaluateROC(embeds, samps):
 
 def link_prediction(config):
     graph = read_vectors_from_file(config['graph_path']+config['graph_file'])
-    graph, test_samples = prepare_sample(graph, train_ratio=config['train_ratio'], community_raito= config['community_ratio'])
+    graph, test_samples = prepare_sample(graph, train_ratio=config['train_ratio'], community_ratio= config['community_ratio'])
     write_vectors_to_file(graph, config['graph_path']+config["sparse_graph"])
     write_vectors_to_file(test_samples, config['graph_path']+config['test_samples'])
 
@@ -100,34 +107,41 @@ if __name__=="__main__":
     from train_kde import train,compute_sketch
 
     config = {}
-    config['graph_path'] = "..\\graphs\\cora\\"
+    config['graph_path'] = "../graphs/cora/"
     config['graph_file'] = "cora5.txt"
     config['train_ratio'] = 0.4
     config["sparse_graph"] = "cora%.1f.txt"%config['train_ratio']
     config['test_samples'] = "cora-edge%.1f.txt"%config['train_ratio']
-    config['community_ratio'] = 1.0
+    config['community_ratio'] = 0.0
 
     link_prediction(config)
 
     train_config = {
-        "batch_size":512,
+        "batch_size":3000,
         "table_size":300,
         'nr_tables':2,
         "embedding_size":300,
         "max_p":3,
-        "random_files":"..\\random\\",
+        "random_files":"../random/",
         "alpha":0.1,
         "kernel_dim":100,
-        'epoch':5,
+        'epoch':2,
         "model":"kne",
-        'fm_path':"..\\feature_maps\\",
-        "embed_file":"..\\embedding\\embedding.txt",
-        "graph_file":"..\\graphs\\cora\\cora0.4.txt",
+        'fm_path':"../feature_maps/",
+        "embed_file":"../embedding/embedding.txt",
+        "graph_file":"../graphs/cora/cora0.4.txt",
         "k": 0
     }
-
+    start = time.time()
     compute_sketch(train_config)
+    end = time.time()
+
+    print("computing sketch time", end-start,flush=True)
+
+    start = time.time()
     train(train_config)
+    end = time.time()
+    print("training time", end - start)
 
     embeddings = read_vectors_from_file(train_config["embed_file"])
     samps = read_vectors_from_file(config['graph_path']+config['test_samples'])
@@ -136,7 +150,7 @@ if __name__=="__main__":
 
     roc = evaluateROC(embeddings, samps)
 
-    print('ROC is, ', roc)
+    print('ROC is, ', roc,flush=True)
 
 
 

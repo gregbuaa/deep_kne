@@ -91,14 +91,14 @@ if __name__=="__main__":
         'nr_tables':2,
         "embedding_size":300,
         "max_p":3,
-        "random_files":"random\\",
+        "random_files":"random/",
         "alpha":0.1,
         "kernel_dim":100,
         'epoch':5,
         "model":"kne",
-        'fm_path':"feature_maps\\",
-        "embed_file":"embedding\\embedding.txt",
-        "graph_file":"graphs\\cora\\cora0.4.txt",
+        'fm_path':"feature_maps/",
+        "embed_file":"embedding/embedding.txt",
+        "graph_file":"graphs/cora/cora5_test.txt",
         "k": 0
     }
 
@@ -109,7 +109,7 @@ if __name__=="__main__":
         os.mkdir(config["embed_file"])
     
     ## test for computing sketch.
-    compute_sketch(config)
+    # compute_sketch(config)
     train(config)
 
 

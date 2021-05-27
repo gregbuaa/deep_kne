@@ -49,7 +49,7 @@ class DataLoader(object):
 
 
 class NegDataLoader(DataLoader):
-    def __init__(self, name, feature_maps, graph_maps, train_samples, max_ver_num=19000, verbose = True):
+    def __init__(self, name, feature_maps, graph_maps, train_samples,  max_ver_num=19000, verbose = True):
         super(NegDataLoader, self).__init__(name)
 
         self.name = name
@@ -63,6 +63,8 @@ class NegDataLoader(DataLoader):
         self.data_size = len(self.train_samples)
 
         any_elem = next(iter(self.vertex_data.values()))
+        self.has_class = True if "class" in any_elem else False
+        self.has_community =True if "graph_num" in any_elem else False
 
         self.p_size = len(any_elem['ct_maps'])
         self.vector_size = len(any_elem['ct_maps'][0])
@@ -76,8 +78,10 @@ class NegDataLoader(DataLoader):
     def _prepare_batch(self, selected_index):
         # rows = [self.vertex_data[idx] for idx in selected_index]
         rows = [self.train_samples[idx] for idx in selected_index]
-
-        context = np.zeros([self.batch_size, 3, self.p_size, self.vector_size], dtype=np.float32)
+        column = 2
+        if self.has_community:
+            column = 3
+        context = np.zeros([self.batch_size, column, self.p_size, self.vector_size], dtype=np.float32)
         vertices = np.zeros(self.batch_size, dtype=np.int32)
         classes = np.zeros(self.batch_size, dtype=np.int32)
         communities = np.zeros(self.batch_size, dtype=np.int32)
@@ -93,11 +97,13 @@ class NegDataLoader(DataLoader):
 
             current_feature = self.vertex_data[u]
             context[i][0] = current_feature['ct_maps']
-            classes[i] = current_feature['class']
+            if self.has_class:
+                classes[i] = current_feature['class']
             context[i][1] = current_feature['ne_maps']
-            graph_num = current_feature['graph_num']
-            communities[i] = graph_num
-            context[i][2] = self.graph_data[str(graph_num)]
+            if self.has_community:
+                graph_num = current_feature['graph_num']
+                communities[i] = graph_num
+                context[i][2] = self.graph_data[str(graph_num)]
             neighbors[i] = np.array(N_u)
             neighbors_len[i] = len(N_u)
 
