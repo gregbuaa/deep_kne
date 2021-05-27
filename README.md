@@ -1,0 +1,4 @@
+# Deep Kernel Network Embedding.
+
+
+A novel paradigm is proposed to integrate the multiple information from the subgraph covering the target node instead of only the target node. Particularly, to epxress the distinctive feature over the vertex domain, a probabiltiy distribution over subgraph space is constructed for each node. The distribution is more effective to express the distinctive characteristic and feature in a higher dimension compared to the latent representation vectors. One of the primary goals of this paradigm is to define the convolution operation over the distributions, which are efficient to evaluate and learn.
